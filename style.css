@@ -807,7 +807,6 @@ button img {
   animation: amazingMove 5s ease infinite;
 }
 
-/* Easter eggs near banner: thumbnails + modal */
 .easterEggs {
   margin: 12px 0 18px;
   display: flex;

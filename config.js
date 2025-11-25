@@ -61,7 +61,7 @@ A slow, kind smile spread across George's face. Tears welled in his eyes.
 "He... he accepts me," George whispered, his voice cracking with emotion. "The Chungus... he has given me his forgiveness."
 
 He stood there for a long time, trapped in the most comforting hug he'd ever known, as the security guard quietly shooed away the crowd. The Big Chungus slept on, a monument to peace and simple pleasures, and for one beautiful, goofy moment on Christmas Eve, George from Warsaw had finally found the hero's welcome he'd always sought.`,
-    storyImage: "./images/participants/chunguswarsaw.png",
+    storyImage: "./images/chunguswarsaw.png",
     favoriteChungus: "gargo chungus",
     favoriteChungusImage: "./images/chungus gargo.png",
     avatar: "./images/participants/BORNATO chungus.png"
@@ -307,7 +307,7 @@ It was enough. For Bartholomew Chungus the Third, it was everything. It was a Ch
 Jax just shook his head, chuckling. "This place gets weirder every year."
 
 And as digital snow began to fall inside the big top, Chungus waddled away, his heart full, his secret revealed, and his chungee mission for Pomni's feet finally, blissfully, complete.`,
-    storyImage: "./images/participants/PomniChungus.png",
+    storyImage: "./images/PomniChungus.png",
     favoriteChungus: "gargo chungus",
     favoriteChungusImage: "./images/chungus gargo.png",
     avatar: "./images/participants/berg.png"
