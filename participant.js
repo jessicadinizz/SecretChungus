@@ -174,12 +174,65 @@ document.addEventListener("DOMContentLoaded", () => {
     return input;
   }
 
+  // Defensive decoding: try several strategies and log intermediate values
   try {
-    const b64 = base64UrlToBase64(dataParam);
-    const jsonStr = atob(b64);
-    payload = JSON.parse(jsonStr);
+    const raw = dataParam;
+
+    // Attempt 1: assume it's URL-safe base64 (possibly URI-encoded)
+    let decodedOnce;
+    try {
+      decodedOnce = decodeURIComponent(raw);
+    } catch (e) {
+      decodedOnce = raw; // leave as-is if decodeURIComponent fails
+    }
+
+    const tryVariants = [decodedOnce, raw];
+
+    // Also try double-decoded if nothing works and looks percent-encoded
+    if (decodedOnce !== raw && decodedOnce.includes('%')) {
+      try {
+        const doubleDecoded = decodeURIComponent(decodedOnce);
+        tryVariants.push(doubleDecoded);
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    let lastError = null;
+    for (const variant of tryVariants) {
+      try {
+        const b64 = base64UrlToBase64(variant);
+        const jsonStr = atob(b64);
+        // if we got here, parsing should succeed
+        payload = JSON.parse(jsonStr);
+        // log for debugging in case of future issues
+        console.log('Decoded payload using variant:', variant);
+        break;
+      } catch (e) {
+        lastError = e;
+        // continue trying other variants
+      }
+    }
+
+    if (!payload) {
+      // exhaustive diagnostic attempt: try raw atob without URL-safe conversion
+      try {
+        const jsonStr = atob(decodeURIComponent(dataParam));
+        payload = JSON.parse(jsonStr);
+      } catch (e) {
+        console.error('Erro ao decodificar ?data= — tentativas:', {
+          dataParam,
+          decodedOnce,
+          variantsTried: tryVariants,
+          lastError: lastError && lastError.message,
+          finalError: e && e.message,
+        });
+        alert("Error reading your Secret Chungus data :(");
+        return;
+      }
+    }
   } catch (e) {
-    console.error('Failed to decode dataParam:', e, dataParam);
+    console.error('Unexpected error decoding dataParam:', e, dataParam);
     alert("Error reading your Secret Chungus data :(");
     return;
   }
