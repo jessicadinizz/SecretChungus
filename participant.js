@@ -1,28 +1,23 @@
-// participant.js
 
-// quantas vezes repetimos a lista de participantes em cada rolo
-const SLOT_LOOPS = 16;
+const SLOT_LOOPS = 150;
 
-// controle de step atual
 let currentStep = 1;
 
-// ---------- CONFETTI ----------
+
 let confettiCanvas = null;
 let confettiCtx = null;
 let confettiPieces = [];
 
-// ---------- DRUM ROLL VIDEO (STEP 2) ----------
 window.drumPlayer = null;
 let drumPlayerReady = false;
 let drumButtonTimerStarted = false;
 let drumShouldPlayWhenReady = false;
+let backgroundMusic = null;
 
-// helper para quebras de linha
 function withBreaks(text) {
   return (text || "").replace(/\n/g, "<br>");
 }
 
-// cria peças de confetti
 function createConfettiPieces() {
   if (!confettiCanvas) return [];
   const colors = ['#fde132', '#009bde', '#ff6b00', '#ff2d5d', '#7cff00'];
@@ -63,7 +58,6 @@ function updateConfetti() {
     p.x += Math.sin(p.d);
     p.tilt = Math.sin(p.tiltAngle) * 15;
 
-    // recicla se sair da tela
     if (p.y > confettiCanvas.height) {
       confettiPieces[index] = {
         x: Math.random() * confettiCanvas.width,
@@ -83,7 +77,7 @@ function startConfetti() {
   if (!confettiCanvas || !confettiCtx) return;
 
   confettiPieces = createConfettiPieces();
-  const duration = 3000; // 3 segundos
+  const duration = 3000; 
   const end = Date.now() + duration;
 
   function runAnimation() {
@@ -117,15 +111,31 @@ function showStep(stepNumber) {
 
   currentStep = stepNumber;
 
-  // quando entra no step 2, marca que o vídeo deve tocar
   if (stepNumber === 2) {
     drumShouldPlayWhenReady = true;
 
-    // se o player já estiver pronto, toca agora
     if (drumPlayerReady && drumPlayer && typeof drumPlayer.playVideo === 'function') {
       drumPlayer.unMute();
       drumPlayer.playVideo();
     }
+  }
+
+  try {
+    if (backgroundMusic) {
+      if (stepNumber === 3) {
+        const p = backgroundMusic.play();
+        if (p && typeof p.catch === 'function') {
+          p.catch((err) => {
+            console.warn('Playback prevented:', err);
+          });
+        }
+      } else {
+        if (!backgroundMusic.paused) backgroundMusic.pause();
+        try { backgroundMusic.currentTime = 0; } catch (e) { /* ignore */ }
+      }
+    }
+  } catch (e) {
+    console.error('Erro ao controlar backgroundMusic:', e);
   }
 }
 
@@ -152,6 +162,16 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("resize", resizeCanvas);
   }
 
+  try {
+    backgroundMusic = new Audio('./images/chungusmassong.ogg');
+    backgroundMusic.loop = true;
+    backgroundMusic.preload = 'auto';
+    backgroundMusic.volume = 0.6;
+  } catch (e) {
+    console.warn('Não foi possível inicializar backgroundMusic:', e);
+    backgroundMusic = null;
+  }
+
   const dataParam = getQueryParam("data");
   if (!dataParam) {
     alert("Invalid link. Ask the person who sent this to check the link.");
@@ -161,34 +181,28 @@ document.addEventListener("DOMContentLoaded", () => {
   let payload;
 
   function base64UrlToBase64(input) {
-    // If it's URI encoded (contains %), try to decode once
     try {
       input = decodeURIComponent(input);
     } catch (e) {
       // ignore
     }
-    // convert URL-safe base64 to standard base64
     input = input.replace(/-/g, '+').replace(/_/g, '/');
-    // pad with '=' to length divisible by 4
     while (input.length % 4 !== 0) input += '=';
     return input;
   }
 
-  // Defensive decoding: try several strategies and log intermediate values
   try {
     const raw = dataParam;
 
-    // Attempt 1: assume it's URL-safe base64 (possibly URI-encoded)
     let decodedOnce;
     try {
       decodedOnce = decodeURIComponent(raw);
     } catch (e) {
-      decodedOnce = raw; // leave as-is if decodeURIComponent fails
+      decodedOnce = raw;
     }
 
     const tryVariants = [decodedOnce, raw];
 
-    // Also try double-decoded if nothing works and looks percent-encoded
     if (decodedOnce !== raw && decodedOnce.includes('%')) {
       try {
         const doubleDecoded = decodeURIComponent(decodedOnce);
@@ -203,19 +217,15 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const b64 = base64UrlToBase64(variant);
         const jsonStr = atob(b64);
-        // if we got here, parsing should succeed
         payload = JSON.parse(jsonStr);
-        // log for debugging in case of future issues
         console.log('Decoded payload using variant:', variant);
         break;
       } catch (e) {
         lastError = e;
-        // continue trying other variants
       }
     }
 
     if (!payload) {
-      // exhaustive diagnostic attempt: try raw atob without URL-safe conversion
       try {
         const jsonStr = atob(decodeURIComponent(dataParam));
         payload = JSON.parse(jsonStr);
@@ -245,14 +255,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // Preenche textos e imagens individuais
   if (containerName) containerName.textContent = giver.name;
   namePlaceholders.forEach((el) => (el.textContent = giver.name));
 
-  // Step 3: história de NATAL do PRÓPRIO participante (giver)
   if (storyTextEl) {
-    // Use a scroll-reveal that shows the story line-by-line as the user scrolls.
-    // We keep the original text and split by newline so we control each "line" element.
     const rawStory = giver.story || "";
     setupScrollReveal(storyTextEl, rawStory);
   }
@@ -260,21 +266,17 @@ document.addEventListener("DOMContentLoaded", () => {
     storyImageEl.src = giver.storyImage;
     storyImageEl.alt = giver.name + " story image";
 
-    // Story image overlay (blur + reveal button)
     const storyImageOverlay = document.getElementById('storyImageOverlay');
     const revealStoryImageButton = document.getElementById('revealStoryImageButton');
 
-    // Ensure overlay is visible when image is present
     if (storyImageOverlay) {
       storyImageOverlay.classList.remove('hidden');
     }
 
-    // If image loads, keep overlay visible until user reveals
     storyImageEl.addEventListener('load', () => {
       if (storyImageOverlay) storyImageOverlay.classList.remove('hidden');
     });
 
-    // Click to reveal: hide overlay (remove blur) and make button non-interactive
     if (revealStoryImageButton && storyImageOverlay) {
       revealStoryImageButton.addEventListener('click', (ev) => {
         ev.stopPropagation();
@@ -283,10 +285,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Step 4: dados de quem ele tirou (receiver)
   if (chungeeNameEl) chungeeNameEl.textContent = receiver.name;
   if (wishMessageEl) {
-    // mensagem do chungee com quebras de linha
     wishMessageEl.innerHTML = withBreaks(receiver.message || "");
   }
   if (favoriteChungusEl) favoriteChungusEl.textContent = receiver.favoriteChungus || "";
@@ -302,52 +302,43 @@ document.addEventListener("DOMContentLoaded", () => {
     chungeeAvatarImg.alt = receiver.name;
   }
 
-  // Navegação entre steps
   document.body.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-next-step]");
     if (!btn) return;
 
     const nextStep = Number(btn.getAttribute("data-next-step"));
 
-    // sempre que avançar de step, para o vídeo de drum roll (se existir)
     if (window.drumPlayer && typeof window.drumPlayer.stopVideo === "function") {
       window.drumPlayer.stopVideo();
     }
 
     showStep(nextStep);
 
-    // Quando entra no step 4, dispara a slot machine
     if (nextStep === 4) {
       startSlotMachine(receiver.id);
     }
   });
 
-  // Botão "No, I am not" -> jumpscare
   const notMeButton = document.getElementById("notMeButton");
   const morbiusOverlay = document.getElementById("morbiusOverlay");
   const morbiusImage = document.getElementById("morbiusImage");
 
-  // Botão "yes i'm" -> mostra popup, espera Xs e vai para o próximo card
   const yesButton = document.getElementById("yesImButton");
   const trustPopup = document.getElementById("trustPopup");
   let trustTimeoutId = null;
 
   if (yesButton && trustPopup) {
     yesButton.addEventListener("click", () => {
-      // mostra popup com transição
       trustPopup.classList.add("visible");
 
-      // garante que continuamos no step 1 enquanto o popup está na tela
       showStep(1);
 
-      // depois de 2s, some o popup e vai pro step 2
       trustTimeoutId = setTimeout(() => {
         trustPopup.classList.remove("visible");
         showStep(2);
       }, 2000);
     });
 
-    // se clicar no próprio popup/overlay, pula o tempo e já avança
     trustPopup.addEventListener("click", () => {
       if (trustTimeoutId) {
         clearTimeout(trustTimeoutId);
@@ -360,31 +351,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (notMeButton && morbiusOverlay && morbiusImage) {
     notMeButton.addEventListener("click", () => {
-      // mostra o overlay
       morbiusOverlay.classList.remove("hidden");
 
-      // garante que tem classe base woah
       if (!morbiusImage.classList.contains("woah")) {
         morbiusImage.classList.add("woah");
       }
 
-      // reseta a animação pra poder disparar toda vez
       morbiusImage.classList.remove("simpleEntrance");
       void morbiusImage.offsetWidth; // força reflow
       morbiusImage.classList.add("simpleEntrance");
     });
 
-    // clicar em qualquer lugar do overlay fecha
     morbiusOverlay.addEventListener("click", () => {
       morbiusOverlay.classList.add("hidden");
     });
   }
 
-  // prepara as imagens da slot
+  (function () {
+    const amazingImgs = document.querySelectorAll('.amazingsec img');
+    const bannerPopupEl = document.getElementById('bannerPopup');
+    const bannerPopupImageEl = document.getElementById('bannerPopupImage');
+    if (!amazingImgs || !amazingImgs.length || !bannerPopupEl || !bannerPopupImageEl) return;
+
+    if (amazingImgs[0]) {
+      amazingImgs[0].style.cursor = 'pointer';
+      amazingImgs[0].addEventListener('click', (e) => {
+        e.stopPropagation();
+        bannerPopupImageEl.src = './images/Sans_overworld.png';
+        bannerPopupEl.classList.remove('hidden');
+      });
+    }
+
+    if (amazingImgs[1]) {
+      amazingImgs[1].style.cursor = 'pointer';
+      amazingImgs[1].addEventListener('click', (e) => {
+        e.stopPropagation();
+        bannerPopupImageEl.src = './images/fucking dog.png';
+        bannerPopupEl.classList.remove('hidden');
+      });
+    }
+  })();
+
   setupSlotReels();
 });
 
-/* ---------- SLOT MACHINE ---------- */
 
 function setupSlotReels() {
   const slotEl = document.getElementById("slotMachine");
@@ -393,12 +403,14 @@ function setupSlotReels() {
   const reelInners = slotEl.querySelectorAll(".reel-inner");
   if (!reelInners.length) return;
 
-  // lista de participantes com avatar
   const faces = PARTICIPANTS.filter((p) => p.avatar);
+
+  try {
+    console.log('setupSlotReels: SLOT_LOOPS=', SLOT_LOOPS, 'facesCount=', faces.length, 'expectedPerReel=', faces.length * SLOT_LOOPS);
+  } catch (e) { /* ignore */ }
 
   reelInners.forEach((reel) => {
     reel.innerHTML = "";
-    // Repete a lista várias vezes pra ter altura suficiente
     for (let loop = 0; loop < SLOT_LOOPS; loop++) {
       faces.forEach((p) => {
         const img = document.createElement("img");
@@ -412,12 +424,9 @@ function setupSlotReels() {
   });
 }
 
-// Splits text by line breaks and sets up IntersectionObserver to reveal lines
 function setupScrollReveal(containerEl, rawText) {
-  // Clear existing content
   containerEl.innerHTML = "";
 
-  // Split on CRLF or LF
   const lines = rawText.split(/\r?\n/);
 
   lines.forEach((line, idx) => {
@@ -428,14 +437,12 @@ function setupScrollReveal(containerEl, rawText) {
       span.classList.add('empty-line');
       span.innerHTML = '&nbsp;';
     } else {
-      // Use textContent to avoid accidental HTML injection
       span.textContent = line;
     }
 
     containerEl.appendChild(span);
   });
 
-  // Create observer to reveal when a line enters viewport
   const observer = new IntersectionObserver((entries, obs) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -458,7 +465,6 @@ function startSlotMachine(receiverId) {
   const revealEl = document.getElementById("slotReveal");
   if (!slotEl) return;
 
-  // esconde o reveal e reseta a transição da foto
   if (revealEl) {
     revealEl.classList.add("hidden");
     revealEl.classList.remove("show-photo");
@@ -473,7 +479,10 @@ function startSlotMachine(receiverId) {
   const iconHeight = firstImg.clientHeight || 80; // fallback
   const totalImages = reelInners[0].children.length;
 
-  // encontre o índice da imagem do receiver no primeiro ciclo
+  try {
+    console.log('startSlotMachine: totalImages=', totalImages, 'iconHeight=', iconHeight, 'facesCount=', facesCount, 'baseIndexInFirstCycle=', baseIndexInFirstCycle);
+  } catch (e) { /* ignore */ }
+
   const allFaces = Array.from(reelInners[0].children);
   const facesCount = PARTICIPANTS.filter((p) => p.avatar).length;
 
@@ -482,7 +491,6 @@ function startSlotMachine(receiverId) {
   );
   if (baseIndexInFirstCycle === -1) return;
 
-  // queremos o receiver no meio: 3 imagens visíveis -> ele fica na posição central
   const visibleOffset = 1;
 
   reelInners.forEach((reel, i) => {
@@ -497,7 +505,14 @@ function startSlotMachine(receiverId) {
     const safeIndex = Math.min(indexInDom, maxIndexForCenter);
 
     const offset = -(safeIndex - visibleOffset) * iconHeight;
-    const duration = 3500 + i * 700;
+
+    const imagesToMove = Math.max(1, Math.abs(safeIndex - visibleOffset));
+    const perImageMs = 80; // ms per image scrolled (tweak to taste)
+    const baseMs = 1200; // minimum base duration
+    const duration = Math.min(30000, baseMs + imagesToMove * perImageMs + i * 600);
+
+    // debug
+    try { console.log(`reel ${i}: imagesToMove=${imagesToMove}, duration=${duration}, offset=${offset}`); } catch (e) {}
 
     reel.style.transition = `transform ${duration}ms cubic-bezier(.41,-0.01,.63,1.09)`;
     setTimeout(() => {
@@ -509,15 +524,12 @@ function startSlotMachine(receiverId) {
   setTimeout(() => {
     if (revealEl) {
       revealEl.classList.remove("hidden");
-      // dispara a transição da foto + balão
       revealEl.classList.add("show-photo");
-      // confetti caindo quando a foto aparece
       startConfetti();
     }
   }, maxDuration);
 }
 
-/* ---------- SNOWFLAKES ---------- */
 
 function createSnowflakes() {
   const numFlakes = 50; // quantidade de flocos
@@ -538,10 +550,8 @@ function createSnowflakes() {
   }
 }
 
-// chama quando a página carregar
 window.addEventListener('load', createSnowflakes);
 
-/* --- POPUP DO BANNER (3 CLICKS) --- */
 (function () {
   const banner = document.querySelector('.chungusBanner');
   const bannerPopup = document.getElementById('bannerPopup');
@@ -552,7 +562,6 @@ window.addEventListener('load', createSnowflakes);
     return;
   }
 
-  // imagens em ordem de clique
   const bannerImages = [
     './images/emoji wave.png',
     './images/another slice of pizza.png',
@@ -563,7 +572,6 @@ window.addEventListener('load', createSnowflakes);
 
   function openBannerPopup() {
     if (bannerClickCount >= bannerImages.length) {
-      // a partir do 4º clique não faz mais nada
       return;
     }
 
@@ -579,7 +587,6 @@ window.addEventListener('load', createSnowflakes);
   banner.addEventListener('click', openBannerPopup);
   bannerPopupClose.addEventListener('click', closeBannerPopup);
 
-  // fechar se clicar fora da imagem
   bannerPopup.addEventListener('click', function (e) {
     if (e.target === bannerPopup) {
       closeBannerPopup();
@@ -587,9 +594,7 @@ window.addEventListener('load', createSnowflakes);
   });
 })();
 
-/* ---------- DRUM ROLL VIDEO (STEP 2) ---------- */
 
-// carrega API do YouTube
 (function loadYouTubeAPI() {
   const existing = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
   if (existing) return;
@@ -600,15 +605,14 @@ window.addEventListener('load', createSnowflakes);
   firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 })();
 
-// callback global exigido pela YouTube IFrame API
 function onYouTubeIframeAPIReady() {
   const drumContainer = document.getElementById('drumVideo');
   if (!drumContainer) return;
 
   drumPlayer = new YT.Player('drumVideo', {
-    videoId: 'Q0h751kT6zQ', // ID do vídeo
+    videoId: 'Q0h751kT6zQ', 
     playerVars: {
-      autoplay: 0,        // NÃO autoplay aqui; só quando step 2 ficar ativo
+      autoplay: 0,        
       controls: 0,
       rel: 0,
       modestbranding: 1,
@@ -627,7 +631,6 @@ function onYouTubeIframeAPIReady() {
 function onDrumPlayerReady(event) {
   drumPlayerReady = true;
 
-  // se o step 2 já estiver ativo e marcamos que deve tocar, toca agora
   if (drumShouldPlayWhenReady && currentStep === 2) {
     event.target.unMute();
     event.target.playVideo();
@@ -635,7 +638,6 @@ function onDrumPlayerReady(event) {
 }
 
 function onDrumPlayerStateChange(event) {
-  // quando começar a tocar pela primeira vez, dispara o timer de 8s (aqui 5s)
   if (event.data === YT.PlayerState.PLAYING && !drumButtonTimerStarted) {
     drumButtonTimerStarted = true;
 
@@ -644,6 +646,6 @@ function onDrumPlayerStateChange(event) {
       if (btn) {
         btn.classList.remove('hidden');
       }
-    }, 5000); // ajusta se quiser outro tempo
+    }, 5000); 
   }
 }

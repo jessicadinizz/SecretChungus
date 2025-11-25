@@ -22,32 +22,27 @@
             <div class="cardSection">
                 <h1>Welcome to Secret Chungus, <span id="playerName">[name]</span>!</h1>
 
-                <!-- STEP 1 -->
                 <div class="step-card active" data-step="1">
                     <p>Wait, you're  <span class="fire">s</span><span class="burn">u</span><span class="burn">r</span><span class="fire">e</span> you are <span class="name-placeholder">[name]</span>, right?</p>
                     <img class="youImage" src="./images/YOU.jpg" alt="You">
                     <div class="buttons-row">
                         <button id="yesImButton">yes i'm<img src="./images/cartoon-emoticon-giving-thumb-up-vector-5660335.jpg"></button>
 
-
-                        <!-- botão do jumpscare -->
                         <button id="notMeButton">no im not
                             <img src="./images/9plus10.jpg" alt="">
                         </button>
                     </div>
                 </div>
                 
-                <!-- STEP 2 -->
                 <div class="step-card" data-step="2">
                     <div class="subSecondCard" style="margin-top: 16px;">
-                        <!-- WRAPPER DO VÍDEO DE DRUM ROLL -->
                          <p>let's see who your chungee is!!!!</p>
                         <div id="drumVideoWrapper" class="drum-video-wrapper">
                             <div id="drumVideo"></div>
                         </div>
 
                         <div class="buttons-row" style="margin-top: 20px;">
-                            <!-- botão começa escondido, só aparece depois dos 8s -->
+
                             <button id="drumNextButton" data-next-step="3" class="hidden">
                                 Who is it?!?!?!
                             </button>
@@ -57,7 +52,6 @@
 
 
 
-                <!-- STEP 3 -->
                 <div class="step-card" data-step="3">
                     <h2>But first, let's hear from our AI Christmas sponsor Story</h2>
                     <p id="storyText" class="story-text">[story]</p>
@@ -65,7 +59,6 @@
                         <div class="story-image-frame" style="display:inline-block; position:relative;">
                             <img id="storyImage" class="story-image" src="" alt="Story Image" style="max-width:100%; border-radius:12px; box-shadow:0 2px 12px #ccc; display:block;">
 
-                            <!-- Overlay with blur + reveal button -->
                             <div id="storyImageOverlay" class="story-image-overlay">
                                 <button id="revealStoryImageButton" class="reveal-story-btn">REVEAL STORY IMAGE</button>
                             </div>
@@ -76,11 +69,9 @@
                     </div>
                 </div>
 
-                <!-- STEP 4 -->
                 <div class="step-card" data-step="4">
                     <h2>Time to reveal your chungee!</h2>
 
-                    <!-- SLOT MACHINE -->
                     <div class="slot-wrapper">
                         <div class="slots" id="slotMachine">
                             <div class="reel"><div class="reel-inner"></div></div>
@@ -90,7 +81,6 @@
                         <p class="slot-caption">Rolling all chungos in the universe...</p>
                     </div>
 
-                    <!-- aparece só depois que a slot termina -->
                     <div id="slotReveal" class="slot-reveal hidden">
                         <h2>Your secret chungee is <span id="chungeeName">[chungee]</span>!</h2>
 
@@ -233,7 +223,6 @@
             </div>
         </section>
     </div>
-    <!-- POPUP DO BANNER (3 CLICKS) -->
     <div id="bannerPopup" class="banner-popup-overlay hidden">
         <div class="banner-popup">
             <button id="bannerPopupClose" class="banner-popup-close" aria-label="Close popup">×</button>
@@ -241,7 +230,6 @@
         </div>
     </div>
 
-    <!-- OVERLAY DO JUMPSCARE -->
     <div id="morbiusOverlay" class="morbius-overlay hidden">
         <div class="morbius-inner">
             <img id="morbiusImage" class="morbius-img" src="./images/morbius 3.png" alt="MORBIUS 3">

@@ -15,6 +15,10 @@
     <div>
       <img class="chungusBanner" src="./images/SecretChungusBanner.png" alt="SECRET CHUNGUS">
     </div>
+    <div class="easterEggs">
+      <img id="egg-cool" class="easter-thumb" src="./images/emoji-cool.jpg" alt="REALLY COOL" data-popup="./images/Sans_overworld.png">
+      <img id="egg-dog" class="easter-thumb" src="./images/fucking%20dog.png" alt="FUCKING DOG" data-popup="./images/fucking%20dog.png">
+    </div>
 
     <section class="mainSection">
       <div class="cardSection">
@@ -41,5 +45,50 @@
 
   <script src="config.js"></script>
   <script src="admin.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const thumbs = document.querySelectorAll('.easter-thumb');
+      const modal = document.createElement('div');
+      modal.id = 'easter-modal';
+      modal.className = 'easter-modal';
+      modal.setAttribute('aria-hidden', 'true');
+      modal.innerHTML = `
+        <div id="easter-backdrop" class="easter-modal-backdrop"></div>
+        <div class="easter-modal-content" role="dialog" aria-modal="true">
+          <button id="easter-close" class="easter-close" aria-label="Close">×</button>
+          <img id="easter-image" src="" alt="Easter image">
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      const easterModal = document.getElementById('easter-modal');
+      const easterImage = document.getElementById('easter-image');
+      const easterClose = document.getElementById('easter-close');
+      const easterBackdrop = document.getElementById('easter-backdrop');
+
+      thumbs.forEach(function (t) {
+        t.style.cursor = 'pointer';
+        t.addEventListener('click', function () {
+          const src = t.dataset.popup;
+          if (!src) return;
+          easterImage.src = src;
+          easterModal.style.display = 'block';
+          easterModal.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+        });
+      });
+
+      function closeModal() {
+        easterModal.style.display = 'none';
+        easterImage.src = '';
+        easterModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+
+      easterClose.addEventListener('click', closeModal);
+      easterBackdrop.addEventListener('click', closeModal);
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+    });
+  </script>
 </body>
 </html>

@@ -1,6 +1,3 @@
-// admin.js
-
-// TROCA ESSA SENHA AQUI:
 const ADMIN_PASSWORD = "chungus2024";
 
 function shuffle(array) {
@@ -11,17 +8,13 @@ function shuffle(array) {
   return array;
 }
 
-// gera um ciclo perfeito: cada pessoa dá para a próxima e a última dá para a primeira
 function gerarCicloPerfeito(n) {
-  // cria ordem aleatória de índices
   const ordem = shuffle([...Array(n).keys()]);
-
-  // perm[i] = índice de quem i tirou
   const perm = Array(n).fill(null);
 
   for (let i = 0; i < n; i++) {
     const atual = ordem[i];
-    const proximo = ordem[(i + 1) % n]; // fecha o ciclo
+    const proximo = ordem[(i + 1) % n];
     perm[atual] = proximo;
   }
 
@@ -29,7 +22,6 @@ function gerarCicloPerfeito(n) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // --- CHECAGEM DE SENHA ---
   const authed = sessionStorage.getItem("secretChungusAdminOK");
   if (!authed) {
     const pwd = prompt("Enter admin password:");
@@ -39,10 +31,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     sessionStorage.setItem("secretChungusAdminOK", "1");
   }
-  // --- FIM CHECAGEM DE SENHA ---
 
   const btnSortear = document.getElementById("btn-sortear");
   const tbody = document.getElementById("links-body");
+
+  function renderDraw(pairs) {
+    tbody.innerHTML = "";
+    pairs.forEach((pair) => {
+      const giver = PARTICIPANTS.find((p) => p.id === pair.giverId);
+      const receiver = PARTICIPANTS.find((p) => p.id === pair.receiverId);
+
+      const tr = document.createElement('tr');
+      const tdNome = document.createElement('td');
+      const tdLink = document.createElement('td');
+
+      tdNome.textContent = (giver && giver.name) ? giver.name : pair.giverId;
+
+      const participantUrl = new URL('participant.html', window.location.href);
+      const payload = { giverId: pair.giverId, receiverId: pair.receiverId };
+      const link = `${participantUrl.toString()}?data=${encodeURIComponent(btoa(JSON.stringify(payload)))}`;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = link;
+      input.readOnly = true;
+
+      tdLink.appendChild(input);
+      tr.appendChild(tdNome);
+      tr.appendChild(tdLink);
+      tbody.appendChild(tr);
+    });
+  }
 
   btnSortear.addEventListener("click", () => {
     const n = PARTICIPANTS.length;
@@ -50,8 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Precisa de pelo menos 2 participantes.");
       return;
     }
-
-    // agora usa o ciclo perfeito em vez do derangement genérico
     const perm = gerarCicloPerfeito(n);
     tbody.innerHTML = "";
 
@@ -63,29 +80,39 @@ document.addEventListener("DOMContentLoaded", () => {
         giverId: giver.id,
         receiverId: receiver.id
       };
-
-      const participantUrl = new URL("participant.html", window.location.href);
-      const link = `${participantUrl.toString()}?data=${encodeURIComponent(
-        btoa(JSON.stringify(payload))
-      )}`;
-
-      const tr = document.createElement("tr");
-      const tdNome = document.createElement("td");
-      const tdLink = document.createElement("td");
-
-      tdNome.textContent = giver.name;
-
-      const input = document.createElement("input");
-      input.type = "text";
-      input.value = link;
-      input.readOnly = true;
-
-      tdLink.appendChild(input);
-      tr.appendChild(tdNome);
-      tr.appendChild(tdLink);
-      tbody.appendChild(tr);
+      if (!window._lastDrawPairs) window._lastDrawPairs = [];
+      window._lastDrawPairs.push({ giverId: giver.id, receiverId: receiver.id });
     }
 
-    alert("Sorteio feito! Agora é só copiar os links e enviar para cada pessoa.");
+    renderDraw(window._lastDrawPairs);
+
+    try {
+      const drawJson = JSON.stringify(window._lastDrawPairs);
+      const drawB64 = btoa(drawJson);
+      const u = new URL(window.location.href);
+      u.searchParams.set('draw', drawB64);
+      history.replaceState(null, '', u.toString());
+    } catch (e) {
+      console.warn('Could not write draw to URL:', e);
+    }
+
+    alert("Sorteio feito! O resultado foi salvo na URL (pode salvar/compartilhar). Copie os links abaixo.");
   });
+
+  (function loadDrawFromUrl() {
+    try {
+      const params = new URL(window.location.href).searchParams;
+      const drawB64 = params.get('draw');
+      if (!drawB64) return;
+      const json = atob(drawB64);
+      const pairs = JSON.parse(json);
+      if (Array.isArray(pairs) && pairs.length) {
+        window._lastDrawPairs = pairs;
+        renderDraw(pairs);
+        console.log('Loaded draw from URL with', pairs.length, 'pairs');
+      }
+    } catch (e) {
+      console.warn('Failed to load draw from URL:', e);
+    }
+  })();
 });
