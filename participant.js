@@ -159,10 +159,27 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   let payload;
+
+  function base64UrlToBase64(input) {
+    // If it's URI encoded (contains %), try to decode once
+    try {
+      input = decodeURIComponent(input);
+    } catch (e) {
+      // ignore
+    }
+    // convert URL-safe base64 to standard base64
+    input = input.replace(/-/g, '+').replace(/_/g, '/');
+    // pad with '=' to length divisible by 4
+    while (input.length % 4 !== 0) input += '=';
+    return input;
+  }
+
   try {
-    payload = JSON.parse(atob(decodeURIComponent(dataParam)));
+    const b64 = base64UrlToBase64(dataParam);
+    const jsonStr = atob(b64);
+    payload = JSON.parse(jsonStr);
   } catch (e) {
-    console.error(e);
+    console.error('Failed to decode dataParam:', e, dataParam);
     alert("Error reading your Secret Chungus data :(");
     return;
   }
